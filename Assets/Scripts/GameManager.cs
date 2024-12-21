@@ -21,11 +21,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Button nextLevelButton;
     [SerializeField] private GameObject levelCompletePanel;
     [SerializeField] private TextMeshProUGUI levelText;
-
+    [SerializeField] private TextMeshProUGUI comboText; // Drag your combo text UI element here
+    
     [Header("Game Settings")]
     [SerializeField] private List<Sprite> cardSprites;
     [SerializeField] private float matchDelay = 1f;
-    [SerializeField] private float mismatchDelay = 1.5f;
+    //[SerializeField] private float mismatchDelay = 1.5f;
     [SerializeField] private float timeLimit = 60f;
 
     [Header("Sfx")]
@@ -38,23 +39,28 @@ public class GameManager : MonoBehaviour
     private bool isGameActive;
     private Card firstSelected;
     private Card secondSelected;
-    private bool canSelect = true;
+    //private bool canSelect = true;
     private List<Card> activeCards;
     private List<CardComparisonData> pendingComparisons = new();
     private Coroutine comparisonCoroutine;
-    private int currentScore = 0;
+    //private int currentScore = 0;
+    private int comboCount = 0;
+    private Animator comboAnim;
 
     private void Start()
     {
+        comboAnim = comboText.GetComponent<Animator>();
         nextLevelButton.onClick.AddListener(LoadNextLevel);
         restartButton.onClick.AddListener(RestartLevel);
-        StartLevel();
+        StartLevel();      
     }
     private void StartLevel()
     {
         //Get current level && score
         currentLevel = SaveManager2.Instance.currentLevel;
         score = SaveManager2.Instance.highScore;
+        comboCount = 0;
+        UpdateComboText();
         // Reset game state
         //score = 0;
         gameTimer = 0;
@@ -199,7 +205,7 @@ public class GameManager : MonoBehaviour
             for (int i = pendingComparisons.Count - 1; i >= 0; i--)
             {
                 var comparison = pendingComparisons[i];
-                
+
                 if (comparison.SecondCard == null) continue;
 
                 if (Time.time - comparison.ComparisonStartTime >= matchDelay)
@@ -209,13 +215,22 @@ public class GameManager : MonoBehaviour
                         // Match found
                         comparison.FirstCard.SetMatched();
                         comparison.SecondCard.SetMatched();
-                        score += 100;
+
+                        // Increase combo
+                        comboCount++;
+                        UpdateComboText();
+
+                        // Add bonus points based on combo
+                        score += 100 * comboCount;
 
                         CheckGameOver();
                     }
                     else
                     {
-                        // No match
+                        // No match - reset combo
+                        comboCount = 0;
+                        UpdateComboText();
+
                         comparison.FirstCard.Flip();
                         comparison.SecondCard.Flip();
                         comparison.FirstCard.PlayMismatchAnimation();
@@ -229,10 +244,30 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.1f); // Check periodically
+            yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 
+    private void UpdateComboText()
+    {
+        if (comboCount > 1)
+        {
+            comboText.text = $"{comboCount} xCOMBO!";
+            comboText.gameObject.SetActive(true);
+            comboAnim.SetTrigger("Pop");
+            StartCoroutine(ReleaseComboText(comboText));
+        }
+        else
+        {
+            comboText.gameObject.SetActive(false);
+        }
+    }
+    private IEnumerator ReleaseComboText(TextMeshProUGUI comboText)
+    {
+        yield return new WaitForSecondsRealtime(2f);
+        comboText.gameObject.SetActive(false);
+        comboCount = 0;
+    }
     private void Update()
     {
         if (isGameActive)
