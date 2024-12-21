@@ -15,6 +15,8 @@ public class Card : MonoBehaviour
     private bool isFaceUp;
     private bool isMatched;
     private bool isAnimating;
+    public AudioClip pair, noPair;
+    private AudioSource audioS;
 
     public event System.Action<Card> OnCardClicked;
 
@@ -29,6 +31,7 @@ public class Card : MonoBehaviour
         if (!button) button = GetComponent<Button>();
 
         button.onClick.AddListener(OnClick);
+        audioS = GetComponent<AudioSource>();
     }
 
     public void SetupCard(int newValue, Sprite frontSprite)
@@ -78,6 +81,7 @@ public class Card : MonoBehaviour
 
     public void SetMatched()
     {
+        audioS.PlayOneShot(pair);
         isMatched = true;
         isAnimating = true;
         animator.PlayMatchAnimation()
@@ -86,6 +90,7 @@ public class Card : MonoBehaviour
 
     public void PlayMismatchAnimation()
     {
+        audioS.PlayOneShot(noPair);
         isAnimating = true;
         animator.PlayMismatchShake()
             .OnComplete(() => isAnimating = false);
