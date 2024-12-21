@@ -21,10 +21,18 @@ public class CardLayoutManager : MonoBehaviour
 
     private void Awake()
     {
+
         InitializeGridLayout();
         InitializeCardPool();
     }
-
+    //That method i just learned for dynamically changing screen orientation:)
+    private void OnRectTransformDimensionsChange()
+    {
+        //Fixed layout for different screen size
+        gridLayout.constraint = ((float)Screen.width / Screen.height < 1) ?
+            GridLayoutGroup.Constraint.FixedColumnCount :
+            GridLayoutGroup.Constraint.FixedRowCount;
+    }
     private void InitializeGridLayout()
     {
         if (!gridLayout)

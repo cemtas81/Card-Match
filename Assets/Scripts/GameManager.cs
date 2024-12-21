@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using System.Collections.Generic;
-using System;
+
 
 public class GameManager : MonoBehaviour
 {
@@ -26,9 +26,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private List<Sprite> cardSprites;
     [SerializeField] private float matchDelay = 1f;
     [SerializeField] private float mismatchDelay = 1.5f;
-    [SerializeField] private float timeLimit = 60f; 
+    [SerializeField] private float timeLimit = 60f;
 
-    private int currentLevel = 1;
+    [Header("Sfx")]
+    [SerializeField] private AudioSource ticking ;
+
+    public int currentLevel = 1;
     private int score;
     private int moves;
     private float gameTimer;
@@ -39,7 +42,8 @@ public class GameManager : MonoBehaviour
     private List<Card> activeCards;
     private List<CardComparisonData> pendingComparisons = new();
     private Coroutine comparisonCoroutine;
-  
+    private int currentScore = 0;
+
     private void Start()
     {
         nextLevelButton.onClick.AddListener(LoadNextLevel);
@@ -48,8 +52,11 @@ public class GameManager : MonoBehaviour
     }
     private void StartLevel()
     {
+        //Get current level && score
+        currentLevel = SaveManager2.Instance.currentLevel;
+        score = SaveManager2.Instance.highScore;
         // Reset game state
-        score = 0;
+        //score = 0;
         gameTimer = 0;
         isGameActive = true;
         levelCompletePanel.SetActive(false);
@@ -116,6 +123,7 @@ public class GameManager : MonoBehaviour
     private void LoadNextLevel()
     {
         currentLevel = (currentLevel % 6) + 1; // Loop through levels 1-6
+        SaveManager2.Instance.UpdateProgress(currentLevel, score); // Save progress
         StartLevel();
     }
 
@@ -129,6 +137,7 @@ public class GameManager : MonoBehaviour
     {
         isGameActive = false;
         levelCompletePanel.SetActive(true);
+        SaveManager2.Instance.UpdateProgress(currentLevel, score);
     }
     private struct CardComparisonData
     {
@@ -246,6 +255,8 @@ public class GameManager : MonoBehaviour
     {
         MenuPanel.SetActive(!MenuPanel.activeSelf);
         Time.timeScale = Time.timeScale == 1 ? 0 : 1;
+        if (ticking.isPlaying) ticking.Pause(); else ticking.Play();
+
     }
     private void UpdateUI()
     {
